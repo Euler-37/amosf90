@@ -1,4 +1,10 @@
 module amos_utils
+   implicit none
+   real(8),parameter::d1mach1 = 2.d0**(minexponent(1.d0)-1) ! the smallest positive magnitude.
+   real(8),parameter::d1mach2 = huge(1.d0)                  ! the largest magnitude.
+   real(8),parameter::d1mach3 = 2.d0**(-digits(1.d0))       ! the smallest relative spacing.
+   real(8),parameter::d1mach4 = 2.d0**(1-digits(1.d0))      ! the largest relative spacing.
+   real(8),parameter::d1mach5 = log10(2.d0)
    interface iszero
       module procedure iszero_real8
       module procedure iszero_complex8
