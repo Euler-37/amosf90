@@ -1,5 +1,6 @@
 !// forquill v1.01 beta www.fcode.cn
 integer function f90_zuchk(y, ascle, tol)result(nz)
+   implicit none
    !***begin prologue  zuchk
    !***refer to zseri,zuoik,zunk1,zunk2,zuni1,zuni2,zkscl
    !
