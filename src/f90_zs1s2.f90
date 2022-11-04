@@ -1,6 +1,6 @@
 
 !// forquill v1.01 beta www.fcode.cn
-subroutine zs1s2(zr, s1, s2, nz, ascle, alim, iuf)
+subroutine f90_zs1s2(zr, s1, s2, nz, ascle, alim, iuf)
    use amos_utils
    implicit none
    !***begin prologue  zs1s2
@@ -43,4 +43,4 @@ subroutine zs1s2(zr, s1, s2, nz, ascle, alim, iuf)
    s2 = 0.0d0
    nz = 1
    iuf = 0
-end subroutine zs1s2
+end subroutine f90_zs1s2
