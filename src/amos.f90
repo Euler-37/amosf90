@@ -111,7 +111,7 @@ contains
       itime = 1
       k = 1
       ptr = 1.0d0/az
-      rz = 2*ptr*conjg(z)
+      rz = 2*ptr*ptr*conjg(z)
       t1 = rz*max(amagz,real(idnu,8))
       p2 = -t1
       p1 = 1.0d0
