@@ -13,6 +13,22 @@ module amos_utils
    real(8),parameter::hpi=1.57079632679489662d0
    real(8),parameter::fpi=1.89769999331517738d0
    real(8),parameter::tth=6.66666666666666666d-01
+   integer,parameter::i1mach1=5
+   integer,parameter::i1mach2=6
+   integer,parameter::i1mach3=0
+   integer,parameter::i1mach4=0
+   integer,parameter::i1mach5=bit_size(1)
+   integer,parameter::i1mach6=4
+   integer,parameter::i1mach7=radix(1)
+   integer,parameter::i1mach8=bit_size(1)-1
+   integer,parameter::i1mach9=huge(1)
+   integer,parameter::i1mach10=radix(1.0)
+   integer,parameter::i1mach11=digits(1.0)
+   integer,parameter::i1mach12=minexponent(1.0)
+   integer,parameter::i1mach13=maxexponent(1.0)
+   integer,parameter::i1mach14=digits(1.d0)
+   integer,parameter::i1mach15=minexponent(1.d0)
+   integer,parameter::i1mach16=maxexponent(1.d0)
    interface iszero
       module procedure iszero_real8
       module procedure iszero_complex8
