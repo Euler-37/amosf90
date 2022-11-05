@@ -2,8 +2,8 @@ module amos
    use amos_utils
    implicit none
    private
-   public::f90_zs1s2,f90_zuchk,f90_zrati
-   public::f90_zasyi,f90_zseri,f90_zunik
+   public::f90_zs1s2,f90_zuchk,f90_zrati,f90_zkscl
+   public::f90_zasyi,f90_zseri,f90_zunik,f90_zbknu
 contains
 
    !// forquill v1.01 beta www.fcode.cn
@@ -102,6 +102,7 @@ contains
          rak, rap1, rho, test, test1,ptr
       integer i, id, idnu, inu, itime, k, kk, magz
       complex(8)::t1,p1,p2,pt,rz,cdfnu
+      write(*,*)"call f90_zrati"
       az=abs(z)
       inu = int(fnu)
       idnu = inu + n - 1
@@ -307,6 +308,7 @@ contains
          raz, rs, rtr1, s, ss
       integer::i, ib, iflag, il, k, l, m, nn, nw
       complex(8)::w(2),ak1,ck,coef,cz,hz,rz,s1,s2
+      write(*,*)"call f90_zseri"
       nz = 0
       az = abs(z)
       if (iszero(az)) goto 160
@@ -610,7 +612,7 @@ contains
       integer,intent(inout)::init
       complex(8),intent(inout)::phi,zeta1,zeta2,sum1,cwrk(16)
       real(8),intent(in)::fnu,tol
-      complex(8)::crfn,s,sr,t,t2,zn,st
+      complex(8)::crfn,s,sr,t,t2,st
       real(8)::ac,rfn,tr,test
       integer::i,j,l,k
       real(8),parameter::con(2)=[3.98942280401432678D-01,1.25331413731550025D+00]
@@ -748,4 +750,470 @@ contains
       sum1 = s
       phi = cwrk(16)*con(2)
    end subroutine f90_zunik
+
+   !// forquill v1.01 beta www.fcode.cn
+   subroutine f90_zbknu(z, fnu, kode, n, y, nz, tol, elim, alim)
+      !***begin prologue  zbknu
+      !***refer to  zbesi,zbesk,zairy,zbesh
+      !
+      !     zbknu computes the k bessel function in the right half z plane.
+      !
+      !***routines called  dgamln,i1mach,d1mach,zkscl,zshch,zuchk,azabs,zdiv,
+      !                    azexp,azlog,zmlt,azsqrt
+      !***end prologue  zbknu
+      !
+      complex(8),intent(in)::z
+      integer,intent(in)::n,kode
+      integer,intent(inout)::nz
+      complex(8),intent(inout)::y(n)
+      real(8),intent(in)::fnu,tol,elim,alim
+
+      real(8) aa, ak, ascle, a1, a2, bb, bk, caz, &
+          ckr , crscr, csclr,cbr, dnu, dnu2, etest, fc, fhs,&
+          fk, fks,g1, g2, ptr, p1r , p2m, p2r, rak, rcaz, &
+         s, smur, str,tm, t1, t2,zr, elm, celmr, as, alas, helim
+      integer i, iflag, inu, k, kflag, kk, koded, j, ic, inub, nw
+      complex(8):: rz,smu,fmu,f,cz,s1,s2,csh,cch
+      complex(8):: ck,p,q,coef,p1,p2,pt,st,cs,zd
+      complex(8)::cy(2),cb
+      real(8)::bry(3),cssr(3),csrr(3)
+      !
+      integer,parameter::kmax=30
+      real(8),parameter::cc(8)=[&
+          5.77215664901532861D-01,    -4.20026350340952355D-02,&
+         -4.21977345555443367D-02,     7.21894324666309954D-03,&
+         -2.15241674114950973D-04,    -2.01348547807882387D-05,&
+          1.13302723198169588D-06,     6.11609510448141582D-09&
+         ]
+      write (*, *) 'call f90_zbknu'
+      caz=abs(z)
+      csclr = 1.0d0/tol
+      crscr = tol
+      cssr(1) = csclr
+      cssr(2) = 1.0d0
+      cssr(3) = crscr
+      csrr(1) = crscr
+      csrr(2) = 1.0d0
+      csrr(3) = csclr
+      bry(1) = 1.0d+3*d1mach1/tol
+      bry(2) = 1.0d0/bry(1)
+      bry(3) = d1mach2
+      nz = 0
+      iflag = 0
+      koded = kode
+      rcaz = 1.0d0/caz
+      rz=2*(conjg(z)*rcaz)*rcaz
+      inu = nint(fnu)
+      dnu = fnu - real(inu,8)
+      if (iszero(abs(dnu)-0.5d0)) goto 110
+      dnu2 = 0.0d0
+      if (abs(dnu)>tol) dnu2 = dnu*dnu
+      if (caz>2.0d0) goto 110
+      !-----------------------------------------------------------------------
+      !     series for cabs(z)<=2.0d0
+      !-----------------------------------------------------------------------
+      fc = 1.0d0
+      smu=log(rz)
+      fmu = smu*dnu
+      csh=sinh(fmu)
+      cch=cosh(fmu)
+      if (iszero(dnu)) goto 10
+      fc = dnu*dpi
+      fc = fc/sin(fc)
+      smu=csh/dnu
+      10 continue
+      a2 = 1.0d0 + dnu
+      !-----------------------------------------------------------------------
+      !     gam(1-z)*gam(1+z)=pi*z/sin(pi*z), t1=1/gam(1-dnu), t2=1/gam(1+dnu)
+      !-----------------------------------------------------------------------
+      t2=exp(-log_gamma(a2))
+      t1 = 1.0d0/(t2*fc)
+      if (abs(dnu)>0.1d0) goto 40
+      !-----------------------------------------------------------------------
+      !     series for f0 to resolve indeterminacy for small abs(dnu)
+      !-----------------------------------------------------------------------
+      ak = 1.0d0
+      s = cc(1)
+      do k = 2, 8
+      ak = ak*dnu2
+      tm = cc(k)*ak
+      s = s + tm
+      if (abs(tm)<tol) goto 30
+      end do
+      30 g1 = -s
+      goto 50
+      40 continue
+      g1 = (t1-t2)/(dnu+dnu)
+      50 continue
+      g2 = (t1+t2)*0.5d0
+      f=cch*g1+smu*g2
+      st=exp(fmu)
+      p=0.5d0*st/t2
+      pt=0.5d0/st
+      q=pt/t1
+      s1=f
+      s2=p
+      ak = 1.0d0
+      a1 = 1.0d0
+      ck=1.0d0
+      bk = 1.0d0 - dnu2
+      if (inu>0 .or. n>1) goto 80
+      !-----------------------------------------------------------------------
+      !     generate k(fnu,z), 0.0d0 <= fnu < 0.5d0 and n=1
+      !-----------------------------------------------------------------------
+      if (caz<tol) goto 70
+      cz=zr*zr
+      cz = 0.25d0*cz
+      t1 = 0.25d0*caz*caz
+      60 continue
+      f=(f*ak+p+q)/bk
+      str = 1.0d0/(ak-dnu)
+      p=p*str
+      str = 1.0d0/(ak+dnu)
+      q = q*str
+      rak = 1.0d0/ak
+      ck=ck*cz*rak
+      s1=ck*f+s1
+      a1 = a1*t1*rak
+      bk = bk + ak + ak + 1.0d0
+      ak = ak + 1.0d0
+      if (a1>tol) goto 60
+      70 continue
+      y(1) = s1
+      if (koded==1) return
+      st=exp(z)
+      y(1)=s1*st
+      return
+      !-----------------------------------------------------------------------
+      !     generate k(dnu,z) and k(dnu+1,z) for forward recurrence
+      !-----------------------------------------------------------------------
+      80 continue
+      if (caz<tol) goto 100
+      cz=zr*zr
+      cz = 0.25d0*cz
+      t1 = 0.25d0*caz*caz
+      90 continue
+      f=(f*ak+p+q)/bk
+      str = 1.0d0/(ak-dnu)
+      p = p*str
+      str = 1.0d0/(ak+dnu)
+      q = q*str
+      rak = 1.0d0/ak
+      ck=ck*cz*rak
+      s1=ck*f+s1
+      st=p-f*ak
+      s2=ck*st-s2
+      a1 = a1*t1*rak
+      bk = bk + ak + ak + 1.0d0
+      ak = ak + 1.0d0
+      if (a1>tol) goto 90
+      100 continue
+      kflag = 2
+      a1 = fnu + 1.0d0
+      ak = a1*abs(smur)
+      if (ak>alim) kflag = 3
+      str = cssr(kflag)
+      p2=s2*str
+      s2=p2*rz
+      s1=s1*str
+      if (koded==1) goto 210
+      f=exp(z)
+      s1=s1*f
+      s2=s2*f
+      goto 210
+      !-----------------------------------------------------------------------
+      !     iflag=0 means no underflow occurred
+      !     iflag=1 means an underflow occurred- computation proceeds with
+      !     koded=2 and a test for on scale values is made during forward
+      !     recursion
+      !-----------------------------------------------------------------------
+      110 continue
+      st=sqrt(z)
+      coef=rthdpi/st
+      kflag = 2
+      if (koded==2) goto 120
+      if (zr>alim) goto 290
+      !     blank line
+      st=cssr(kflag)*exp(-conjg(z))
+      coef=coef*st
+      120 continue
+      if (iszero(abs(dnu)-0.5d0)) goto 300
+      !-----------------------------------------------------------------------
+      !     miller algorithm for cabs(z)>2.0d0
+      !-----------------------------------------------------------------------
+      ak = cos(dpi*dnu)
+      ak = abs(ak)
+      if (iszero(ak)) goto 300
+      fhs = abs(0.25d0-dnu2)
+      if (iszero(fhs)) goto 300
+      !-----------------------------------------------------------------------
+      !     compute r2=f(e). if cabs(z)>=r2, use forward recurrence to
+      !     determine the backward index k. r2=f(e) is a straight line on
+      !     12<=e<=60. e is computed from 2**(-e)=b**(1-i1mach(14))=
+      !     tol where b is the base of the arithmetic.
+      !-----------------------------------------------------------------------
+      t1 = real(i1mach14-1,8)
+      t1 = t1*d1mach5*3.321928094d0
+      t1 = max(t1, 12.0d0)
+      t1 = min(t1, 60.0d0)
+      t2 = tth*t1 - 6.0d0
+      if (iszero(z%re)) then
+         t1 = hpi
+         goto 140
+      endif
+      t1 = atan(z%im/z%re)
+      t1 = abs(t1)
+      140 continue
+      if (t2>caz) goto 170
+      !-----------------------------------------------------------------------
+      !     forward recurrence loop when cabs(z)>=r2
+      !-----------------------------------------------------------------------
+      etest = ak/(dpi*caz*tol)
+      fk = 1.0d0
+      if (etest<1.0d0) goto 180
+      fks = 2.0d0
+      ckr = caz + caz + 2.0d0
+      p1r = 0.0d0
+      p2r = 1.0d0
+      do i = 1, kmax
+      ak = fhs/fks
+      cbr = ckr/(fk+1.0d0)
+      ptr = p2r
+      p2r = cbr*p2r - p1r*ak
+      p1r = ptr
+      ckr = ckr + 2.0d0
+      fks = fks + fk + fk + 2.0d0
+      fhs = fhs + fk + fk
+      fk = fk + 1.0d0
+      str = abs(p2r)*fk
+      if (etest<str) goto 160
+      end do
+      goto 310
+      160 continue
+      fk = fk + spi*t1*sqrt(t2/caz)
+      fhs = abs(0.25d0-dnu2)
+      goto 180
+      170 continue
+      !-----------------------------------------------------------------------
+      !     compute backward index k for cabs(z)<r2
+      !-----------------------------------------------------------------------
+      a2 = sqrt(caz)
+      ak = fpi*ak/(tol*dsqrt(a2))
+      aa = 3.0d0*t1/(1.0d0+caz)
+      bb = 14.7d0*t1/(28.0d0+caz)
+      ak = (log(ak)+caz*cos(aa)/(1.0d0+0.008d0*caz))/cos(bb)
+      fk = 0.12125d0*ak*ak/caz + 1.5d0
+      180 continue
+      !-----------------------------------------------------------------------
+      !     backward recurrence loop for miller algorithm
+      !-----------------------------------------------------------------------
+      k = int(fk)
+      fk = real(k,8)
+      fks = fk*fk
+      p1 = 0.0d0
+      p2 = tol
+      cs = p2
+      do i = 1, k
+      a1 = fks - fk
+      ak = (fks+fk)/(a1+fhs)
+      rak = 2.0d0/(fk+1.0d0)
+      cb=(fk+z)*rak
+      pt=p2
+      p2=(pt*cb-p1)*ak
+      p1 = pt
+      cs = cs + p2
+      fks = a1 - fk + 1.0d0
+      fk = fk - 1.0d0
+      end do
+      !-----------------------------------------------------------------------
+      !     compute (p2/cs)=(p2/cabs(cs))*(conjg(cs)/cabs(cs)) for better
+      !     scaling
+      !-----------------------------------------------------------------------
+      tm=abs(cs)
+      ptr = 1.0d0/tm
+      s1 = p2*ptr
+      cs = conjg(cs)*ptr
+      st=coef*s1
+      s1=st*cs
+      if (inu>0 .or. n>1) goto 200
+      zd = z
+      if (iflag==1) goto 270
+      goto 240
+      200 continue
+      !-----------------------------------------------------------------------
+      !     compute p1/p2=(p1/cabs(p2)*conjg(p2)/cabs(p2) for scaling
+      !-----------------------------------------------------------------------
+      tm = abs(p2)
+      ptr = 1.0d0/tm
+      p1 = p1*ptr
+      p2 = conjg(p2)*ptr
+      pt=p1*p2
+      st=dnu+0.5d0-pt
+      st=st/z
+      st = st + 1.0d0
+      s2=st*s1
+      !-----------------------------------------------------------------------
+      !     forward recursion on the three term recursion with relation with
+      !     scaling near exponent extremes on kflag=1 or kflag=3
+      !-----------------------------------------------------------------------
+      210 continue
+      str = dnu + 1.0d0
+      ck = str*rz
+      if (n==1) inu = inu - 1
+      if (inu>0) goto 220
+      if (n>1) goto 215
+      s1 = s
+      215 continue
+      zd = z
+      if (iflag==1) goto 270
+      goto 240
+      220 continue
+      inub = 1
+      if (iflag==1) goto 261
+      225 continue
+      p1r = csrr(kflag)
+      ascle = bry(kflag)
+      do i = inub, inu
+      st = s2
+      s2=ck*st-s1
+      s1 = st
+      ck = ck + rz
+      if (kflag>=3) goto 230
+      p2 = s2*p1r
+      p2m = dmax1(abs(p2%re), abs(p2%im))
+      if (p2m<=ascle) goto 230
+      kflag = kflag + 1
+      ascle = bry(kflag)
+      s1 = s1*p1r
+      s2 = p2
+      str = cssr(kflag)
+      s1 = s1*str
+      s2 = s2*str
+      p1r = csrr(kflag)
+      230 end do
+      if (n/=1) goto 240
+      s1 = s2
+      240 continue
+      str = csrr(kflag)
+      y(1) = s1*str
+      if (n==1) return
+      y(2) = s2*str
+      if (n==2) return
+      kk = 2
+      250 continue
+      kk = kk + 1
+      if (kk>n) return
+      p1r = csrr(kflag)
+      ascle = bry(kflag)
+      do i = kk, n
+      p2 = s2
+      s2=ck*p2+s1
+      s1 = p2
+      ck= ck+ rz
+      p2 = s2*p1r
+      y(i) = p2
+      if (kflag>=3) goto 260
+      p2m = max(abs(p2%re), abs(p2%im))
+      if (p2m<=ascle) goto 260
+      kflag = kflag + 1
+      ascle = bry(kflag)
+      s1 = s1*p1r
+      s2 = p2
+      str = cssr(kflag)
+      s1 = s1*str
+      s2 = s2*str
+      p1r = csrr(kflag)
+      260 end do
+      return
+      !-----------------------------------------------------------------------
+      !     iflag=1 cases, forward recurrence on scaled values on underflow
+      !-----------------------------------------------------------------------
+      261 continue
+      helim = 0.5d0*elim
+      elm = exp(-elim)
+      celmr = elm
+      ascle = bry(1)
+      zd = z
+      ic = -1
+      j = 2
+      do i = 1, inu
+      st = s2
+      s2=st*ck-s1
+      s1 = st
+      ck = ck + rz
+      as = abs(s2)
+      alas = log(as)
+      p2r = -zd%re + alas
+      if (p2r<(-elim)) goto 263
+      st=log(s2)
+      p2=-z+st
+      p1=exp(p2)/tol
+      nw=f90_zuchk(p1,ascle,tol)
+      if (nw/=0) goto 263
+      j = 3 - j
+      cy(j) = p1
+      if (ic==(i-1)) goto 264
+      ic = i
+      goto 262
+      263 continue
+      if (alas<helim) goto 262
+      zd = zd - elim
+      s1 = s1*celmr
+      s2 = s2*celmr
+      262 end do
+      if (n/=1) goto 270
+      s1 = s2
+      goto 270
+      264 continue
+      kflag = 1
+      inub = i + 1
+      s2 = cy(j)
+      j = 3 - j
+      s1 = cy(j)
+      if (inub<=inu) goto 225
+      if (n/=1) goto 240
+      s1 = s2
+      goto 240
+      270 continue
+      y(1) = s1
+      if (n==1) goto 280
+      y(2) = s2
+      280 continue
+      ascle = bry(1)
+      call f90_zkscl(zd, fnu, n, y, nz, rz, ascle, tol, elim)
+      inu = n - nz
+      if (inu<=0) return
+      kk = nz + 1
+      s1 = y(kk)
+      y(kk) = s1*csrr(1)
+      if (inu==1) return
+      kk = nz + 2
+      s2 = y(kk)
+      y(kk) = s2*csrr(1)
+      if (inu==2) return
+      t2 = fnu + real(kk-1,8)
+      ck = t2*rz
+      kflag = 1
+      goto 250
+      290 continue
+      !-----------------------------------------------------------------------
+      !     scale by dexp(z), iflag = 1 cases
+      !-----------------------------------------------------------------------
+      koded = 2
+      iflag = 1
+      kflag = 2
+      goto 120
+      !-----------------------------------------------------------------------
+      !     fnu=half odd integer case, dnu=-0.5
+      !-----------------------------------------------------------------------
+      300 continue
+      s1 = coef
+      s2 = coef
+      goto 210
+      !
+      !
+      310 continue
+      nz = -2
+      return
+   end subroutine f90_zbknu
 end module amos
