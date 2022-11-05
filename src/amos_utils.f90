@@ -5,6 +5,14 @@ module amos_utils
    real(8),parameter::d1mach3 = 2.d0**(-digits(1.d0))       ! the smallest relative spacing.
    real(8),parameter::d1mach4 = 2.d0**(1-digits(1.d0))      ! the largest relative spacing.
    real(8),parameter::d1mach5 = log10(2.d0)
+   real(8),parameter::rt2=1.41421356237309505d0
+   real(8),parameter::dpi=3.14159265358979324d0
+   real(8),parameter::rthdpi=1.25331413731550025d0
+   real(8),parameter::rtpi=0.159154943091895336d0
+   real(8),parameter::spi=1.90985931710274403d0
+   real(8),parameter::hpi=1.57079632679489662d0
+   real(8),parameter::fpi=1.89769999331517738d0
+   real(8),parameter::tth=6.66666666666666666d-01
    interface iszero
       module procedure iszero_real8
       module procedure iszero_complex8
