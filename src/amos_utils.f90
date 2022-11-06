@@ -12,6 +12,7 @@ module amos_utils
    real(8),parameter::spi=1.90985931710274403d0
    real(8),parameter::hpi=1.57079632679489662d0
    real(8),parameter::fpi=1.89769999331517738d0
+   real(8),parameter::thpi=4.71238898038468986D+00
    real(8),parameter::tth=6.66666666666666666d-01
    integer,parameter::i1mach1=5
    integer,parameter::i1mach2=6
