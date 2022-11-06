@@ -4,7 +4,7 @@ module amos
    private
    public::f90_zs1s2,f90_zuchk,f90_zrati,f90_zkscl
    public::f90_zasyi,f90_zseri,f90_zunik,f90_zbknu
-   public::f90_zunhj,f90_zuoik
+   public::f90_zunhj,f90_zuoik,f90_zwrsk
 contains
 
    !// forquill v1.01 beta www.fcode.cn
@@ -1951,4 +1951,89 @@ contains
       nuf = -1
       return
    end subroutine f90_zuoik
+
+   !// forquill v1.01 beta www.fcode.cn
+   subroutine f90_zwrsk(zr, fnu, kode, n, y, nz, cw, tol, elim, alim)
+      !***begin prologue  zwrsk
+      !***refer to  zbesi,zbesk
+      !
+      !     zwrsk computes the i bessel function for re(z).ge.0.0 by
+      !     normalizing the i function ratios from zrati by the wronskian
+      !
+      !***routines called  d1mach,zbknu,zrati,azabs
+      !***end prologue  zwrsk
+      integer,intent(in)   ::kode,n
+      integer,intent(inout)::nz
+      real(8),intent(in)   ::tol,fnu,elim,alim
+      complex(8),intent(in)::zr
+      complex(8),intent(inout)::y(n),cw(2)
+      real(8)::act,acw,ascle,csclr,ract
+      integer::i,nw
+      complex(8)::cinu,ct,c1,c2,st,pt
+      !-----------------------------------------------------------------------
+      !     i(fnu+i-1,z) by backward recurrence for ratios
+      !     y(i)=i(fnu+i,z)/i(fnu+i-1,z) from crati normalized by the
+      !     wronskian with k(fnu,z) and k(fnu+1,z) from cbknu.
+      !-----------------------------------------------------------------------
+      write (*, *) 'call f90_zwrsk'
+      nz = 0
+      call f90_zbknu(zr, fnu, kode, 2, cw, nw, tol, elim, alim)
+      write(*,*)cw
+      if (nw/=0) goto 50
+      call f90_zrati(zr, fnu, n, y, tol)
+      !-----------------------------------------------------------------------
+      !     recur forward on i(fnu+1,z) = r(fnu,z)*i(fnu,z),
+      !     r(fnu+j-1,z)=y(j),  j=1,...,n
+      !-----------------------------------------------------------------------
+      cinu = 1.0d0
+      if (kode==1) goto 10
+      cinu%re = dcos(zr%im)
+      cinu%im = dsin(zr%im)
+      10 continue
+      !-----------------------------------------------------------------------
+      !     on low exponent machines the k functions can be close to both
+      !     the under and overflow limits and the normalization must be
+      !     scaled to prevent over or underflow. cuoik has determined that
+      !     the result is on scale.
+      !-----------------------------------------------------------------------
+      acw = abs(cw(2))
+      ascle = 1.0d+3*d1mach1/tol
+      csclr = 1.0d0
+      if (acw>ascle) goto 20
+      csclr = 1.0d0/tol
+      goto 30
+      20 continue
+      ascle = 1.0d0/ascle
+      if (acw<ascle) goto 30
+      csclr = tol
+      30 continue
+      c1 = cw(1)*csclr
+      c2 = cw(2)*csclr
+      st = y(1)
+      !-----------------------------------------------------------------------
+      !     cinu=cinu*(conjg(ct)/cabs(ct))*(1.0d0/cabs(ct) prevents
+      !     under- or overflow prematurely by squaring cabs(ct)
+      !-----------------------------------------------------------------------
+      pt=st*c1
+      pt=pt+c2
+      ct=zr*pt
+      act = abs(ct)
+      ract = 1.0d0/act
+      ct=conjg(ct)*ract
+      pt = cinu*ract
+      cinu = pt*ct
+      y(1) = cinu*csclr
+      if (n==1) return
+      do i = 2, n
+      cinu=st*cinu
+      st = y(i)
+      y(i) = cinu*csclr
+      end do
+      return
+      50 continue
+      nz = -1
+      if (nw==(-2)) nz = -2
+      return
+   end subroutine f90_zwrsk
+
 end module amos
