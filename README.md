@@ -1,5 +1,7 @@
 # amosf90
 
+# MAYBE BUGS
+
 # 
 - Fork https://github.com/certik/fortran-utils/tree/master/src/legacy/amos
 
