@@ -16,7 +16,7 @@ lines  filename                status(X:delete,?:useless,*:Finish)
     16 zexp.f                              X
     19 zdiv.f                              X
     20 dsclmr.f                            ?
-    22 zshch.f                             *
+    22 zshch.f                             X
     25 fdump.f                             ?
     28 zuchk.f                             *
     31 zabs.f90                            X
