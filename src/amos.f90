@@ -5,7 +5,7 @@ module amos
    public::f90_zs1s2,f90_zuchk,f90_zrati,f90_zkscl
    public::f90_zasyi,f90_zseri,f90_zunik,f90_zbknu
    public::f90_zunhj,f90_zuoik,f90_zwrsk,f90_zmlri
-   public::f90_zacai
+   public::f90_zacai,f90_zairy
 contains
 
    !// forquill v1.01 beta www.fcode.cn
@@ -2179,8 +2179,7 @@ contains
       90 continue
       pt = z
       if (kode==2) pt%re = 0.0d0
-      st=log(rz)
-      p1 = -fnf*st + pt
+      p1 = -fnf*log(rz) + pt
       ap=log_gamma(1.0d0+fnf)
       pt = p1 - ap
       !-----------------------------------------------------------------------
@@ -2189,9 +2188,8 @@ contains
       !-----------------------------------------------------------------------
       p2 = p2 + sum
       ap = abs(p2)
-      p1r = 1.0d0/ap
-      st=exp(pt)
-      ck = st*p1r
+      p1r= 1.0d0/ap
+      ck = exp(pt)*p1r
       pt = conjg(p2)*p1r
       cnorm=ck*pt
       do i = 1, n
@@ -2298,4 +2296,344 @@ contains
       if (nw==(-2)) nz = -2
       return
    end subroutine f90_zacai
+
+   !// forquill v1.01 beta www.fcode.cn
+   subroutine f90_zairy(z, id, kode, ai, nz, ierr)
+      !***begin prologue  zairy
+      !***date written   830501   (yymmdd)
+      !***revision date  890801   (yymmdd)
+      !***category no.  b5k
+      !***keywords  airy function,bessel functions of order one third
+      !***author  amos, donald e., sandia national laboratories
+      !***purpose  to compute airy functions ai(z) and dai(z) for complex z
+      !***description
+      !
+      !                      ***a double precision routine***
+      !         on kode=1, zairy computes the complex airy function ai(z) or
+      !         its derivative dai(z)/dz on id=0 or id=1 respectively. on
+      !         kode=2, a scaling option cexp(zta)*ai(z) or cexp(zta)*
+      !         dai(z)/dz is provided to remove the exponential decay in
+      !         -pi/3.lt.arg(z).lt.pi/3 and the exponential growth in
+      !         pi/3.lt.abs(arg(z)).lt.pi where zta=(2/3)*z*csqrt(z).
+      !
+      !         while the airy functions ai(z) and dai(z)/dz are analytic in
+      !         the whole z plane, the corresponding scaled functions defined
+      !         for kode=2 have a cut along the negative real axis.
+      !         defintions and notation are found in the nbs handbook of
+      !         mathematical functions (ref. 1).
+      !
+      !         input      zr,zi are double precision
+      !           zr,zi  - z=cmplx(zr,zi)
+      !           id     - order of derivative, id=0 or id=1
+      !           kode   - a parameter to indicate the scaling option
+      !                    kode= 1  returns
+      !                             ai=ai(z)                on id=0 or
+      !                             ai=dai(z)/dz            on id=1
+      !                        = 2  returns
+      !                             ai=cexp(zta)*ai(z)       on id=0 or
+      !                             ai=cexp(zta)*dai(z)/dz   on id=1 where
+      !                             zta=(2/3)*z*csqrt(z)
+      !
+      !         output     air,aii are double precision
+      !           air,aii- complex answer depending on the choices for id and
+      !                    kode
+      !           nz     - underflow indicator
+      !                    nz= 0   , normal return
+      !                    nz= 1   , ai=cmplx(0.0d0,0.0d0) due to underflow in
+      !                              -pi/3.lt.arg(z).lt.pi/3 on kode=1
+      !           ierr   - error flag
+      !                    ierr=0, normal return - computation completed
+      !                    ierr=1, input error   - no computation
+      !                    ierr=2, overflow      - no computation, real(zta)
+      !                            too large on kode=1
+      !                    ierr=3, cabs(z) large      - computation completed
+      !                            losses of signifcance by argument reduction
+      !                            produce less than half of machine accuracy
+      !                    ierr=4, cabs(z) too large  - no computation
+      !                            complete loss of accuracy by argument
+      !                            reduction
+      !                    ierr=5, error              - no computation,
+      !                            algorithm termination condition not met
+      !
+      !***long description
+      !
+      !         ai and dai are computed for cabs(z).gt.1.0 from the k bessel
+      !         functions by
+      !
+      !            ai(z)=c*sqrt(z)*k(1/3,zta) , dai(z)=-c*z*k(2/3,zta)
+      !                           c=1.0/(pi*sqrt(3.0))
+      !                            zta=(2/3)*z**(3/2)
+      !
+      !         with the power series for cabs(z).le.1.0.
+      !
+      !         in most complex variable computation, one must evaluate ele-
+      !         mentary functions. when the magnitude of z is large, losses
+      !         of significance by argument reduction occur. consequently, if
+      !         the magnitude of zeta=(2/3)*z**1.5 exceeds u1=sqrt(0.5/ur),
+      !         then losses exceeding half precision are likely and an error
+      !         flag ierr=3 is triggered where ur=dmax1(d1mach(4),1.0d-18) is
+      !         double precision unit roundoff limited to 18 digits precision.
+      !         also, if the magnitude of zeta is larger than u2=0.5/ur, then
+      !         all significance is lost and ierr=4. in order to use the int
+      !         function, zeta must be further restricted not to exceed the
+      !         largest integer, u3=i1mach(9). thus, the magnitude of zeta
+      !         must be restricted by min(u2,u3). on 32 bit machines, u1,u2,
+      !         and u3 are approximately 2.0e+3, 4.2e+6, 2.1e+9 in single
+      !         precision arithmetic and 1.3e+8, 1.8e+16, 2.1e+9 in double
+      !         precision arithmetic respectively. this makes u2 and u3 limit-
+      !         ing in their respective arithmetics. this means that the mag-
+      !         nitude of z cannot exceed 3.1e+4 in single and 2.1e+6 in
+      !         double precision arithmetic. this also means that one can
+      !         expect to retain, in the worst cases on 32 bit machines,
+      !         no digits in single precision and only 7 digits in double
+      !         precision arithmetic. similar considerations hold for other
+      !         machines.
+      !
+      !         the approximate relative error in the magnitude of a complex
+      !         bessel function can be expressed by p*10**s where p=max(unit
+      !         roundoff,1.0e-18) is the nominal precision and 10**s repre-
+      !         sents the increase in error due to argument reduction in the
+      !         elementary functions. here, s=max(1,abs(log10(cabs(z))),
+      !         abs(log10(fnu))) approximately (i.e. s=max(1,abs(exponent of
+      !         cabs(z),abs(exponent of fnu)) ). however, the phase angle may
+      !         have only absolute accuracy. this is most likely to occur when
+      !         one component (in absolute value) is larger than the other by
+      !         several orders of magnitude. if one component is 10**k larger
+      !         than the other, then one can expect only max(abs(log10(p))-k,
+      !         0) significant digits; or, stated another way, when k exceeds
+      !         the exponent of p, no significant digits remain in the smaller
+      !         component. however, the phase angle retains absolute accuracy
+      !         because, in complex arithmetic with precision p, the smaller
+      !         component will not (as a rule) decrease below p times the
+      !         magnitude of the larger component. in these extreme cases,
+      !         the principal phase angle is on the order of +p, -p, pi/2-p,
+      !         or -pi/2+p.
+      !
+      !***references  handbook of mathematical functions by m. abramowitz
+      !                 and i. a. stegun, nbs ams series 55, u.s. dept. of
+      !                 commerce, 1955.
+      !
+      !               computation of bessel functions of complex argument
+      !                 and large order by d. e. amos, sand83-0643, may, 1983
+      !
+      !               a subroutine package for bessel functions of a complex
+      !                 argument and nonnegative order by d. e. amos, sand85-
+      !                 1018, may, 1985
+      !
+      !               a portable package for bessel functions of a complex
+      !                 argument and nonnegative order by d. e. amos, trans.
+      !                 math. software, 1986
+      !
+      !***routines called  zacai,zbknu,azexp,azsqrt,i1mach,d1mach
+      !***end prologue  zairy
+      !     complex ai,cone,csq,cy,s1,s2,trm1,trm2,z,zta,z3
+      complex(8),intent(in)::z
+      complex(8),intent(inout)::ai
+      integer,intent(in)::id,kode
+      integer,intent(inout)::nz,ierr
+      real(8)::aa, ad, ak, alim, atrm, az, az3, bk,&
+         cc, ck,dig, dk, d1, d2, elim, fid, fnu, rl, sfac,&
+         tol, alaz
+      integer::iflag, k, mr, nn
+      complex(8)::cy(1),csq,s1,s2,trm1,trm2,zta,z3
+      real(8),parameter::c1 =3.55028053887817240d-01
+      real(8),parameter::c2 =2.58819403792806799d-01
+      real(8),parameter::coef=1.83776298473930683d-01
+      !***first executable statement  zairy
+      write(*,*)"call f90_zairy,not test"
+      ierr = 0
+      nz = 0
+      if (id<0 .or. id>1) ierr = 1
+      if (kode<1 .or. kode>2) ierr = 1
+      if (ierr/=0) return
+      az = abs(z)
+      tol = max(d1mach4, 1.0d-18)
+      fid = real(id,8)
+      if (az>1.0d0) goto 70
+      !-----------------------------------------------------------------------
+      !     power series for cabs(z).le.1.
+      !-----------------------------------------------------------------------
+      s1 = 1.d0
+      s2 = 1.d0
+      if (az<tol) goto 170
+      aa = az*az
+      if (aa<tol/az) goto 40
+      trm1 = 1.d0
+      trm2 = 1.d0
+      atrm = 1.0d0
+      z3=z**3
+      az3 = az*aa
+      ak = 2.0d0 + fid
+      bk = 3.0d0 - fid - fid
+      ck = 4.0d0 - fid
+      dk = 3.0d0 + fid + fid
+      d1 = ak*dk
+      d2 = bk*ck
+      ad = min(d1, d2)
+      ak = 24.0d0 + 9.0d0*fid
+      bk = 30.0d0 - 9.0d0*fid
+      do k = 1, 25
+         trm1=trm1*z3/d1
+         s1=s1+trm1
+         trm2=trm2*z3/d2
+         s2 = s2 + trm2
+         atrm = atrm*az3/ad
+         d1 = d1 + ak
+         d2 = d2 + bk
+         ad = min(d1, d2)
+         if (atrm<tol*ad) goto 40
+         ak = ak + 18.0d0
+         bk = bk + 18.0d0
+      end do
+      40 continue
+      if (id==1) goto 50
+      ai = s1*c1 - c2*(z*s2)
+      if (kode==1) return
+      ai=ai*exp(tth*z*sqrt(z))
+      return
+      50 continue
+      ai = -s2*c2
+      if (az<=tol) goto 60
+      cc = c1/(1.0d0+fid)
+      ai = ai + cc*(z*s1*z)
+      60 continue
+      if (kode==1) return
+      ai=ai*exp(tth*(z*sqrt(z)))
+      return
+      !-----------------------------------------------------------------------
+      !     case for cabs(z).gt.1.0
+      !-----------------------------------------------------------------------
+      70 continue
+      fnu = (1.0d0+fid)/3.0d0
+      !-----------------------------------------------------------------------
+      !     set parameters related to machine constants.
+      !     tol is the approximate unit roundoff limited to 1.0d-18.
+      !     elim is the approximate exponential over- and underflow limit.
+      !     exp(-elim).lt.exp(-alim)=exp(-elim)/tol    and
+      !     exp(elim).gt.exp(alim)=exp(elim)*tol       are intervals near
+      !     underflow and overflow limits where scaled arithmetic is done.
+      !     rl is the lower boundary of the asymptotic expansion for large z.
+      !     dig = number of base 10 digits in tol = 10**(-dig).
+      !-----------------------------------------------------------------------
+      k    = min(abs(i1mach15), abs(i1mach16))
+      elim = 2.303d0*(real(k,8)*d1mach5-3.0d0)
+      aa   = d1mach5*real(i1mach14 - 1,8)
+      dig  = min(aa, 18.0d0)
+      aa   = aa*2.303d0
+      alim = elim + max(-aa, -41.45d0)
+      rl   = 1.2d0*dig + 3.0d0
+      alaz = log(az)
+      !--------------------------------------------------------------------------
+      !     test for proper range
+      !-----------------------------------------------------------------------
+      aa = 0.5d0/tol
+      aa = min(aa,real(i1mach9,8)*0.5d0)
+      aa = aa**tth
+      if (az>aa) goto 260
+      aa = sqrt(aa)
+      if (az>aa) ierr = 3
+      csq=sqrt(z)
+      zta = tth*(z*csq)
+      !-----------------------------------------------------------------------
+      !     re(zta).le.0 when re(z).lt.0, especially when im(z) is small
+      !-----------------------------------------------------------------------
+      iflag = 0
+      sfac = 1.0d0
+      ak = zta%im
+      if (z%re>=0.0d0) goto 80
+      bk = zta%re
+      ck = -dabs(bk)
+      zta=cmplx(ck,ak,8)
+      80 continue
+      if (.not.iszero(z%im)) goto 90
+      if (z%re>0.0d0) goto 90
+      zta=cmplx(0.0d0,ak,8)
+      90 continue
+      aa = zta%re
+      if (aa>=0.0d0 .and. z%re>0.0d0) goto 110
+      if (kode==2) goto 100
+      !-----------------------------------------------------------------------
+      !     overflow test
+      !-----------------------------------------------------------------------
+      if (aa>(-alim)) goto 100
+      aa = -aa + 0.25d0*alaz
+      iflag = 1
+      sfac = tol
+      if (aa>elim) goto 270
+      100 continue
+      !-----------------------------------------------------------------------
+      !     cbknu and cacon return exp(zta)*k(fnu,zta) on kode=2
+      !-----------------------------------------------------------------------
+      mr = 1
+      if (z%im<0.0d0) mr = -1
+      call f90_zacai(zta, fnu, kode, mr, 1, cy, nn, rl, tol, elim, alim)
+      if (nn<0) goto 280
+      nz = nz + nn
+      goto 130
+      110 continue
+      if (kode==2) goto 120
+      !-----------------------------------------------------------------------
+      !     underflow test
+      !-----------------------------------------------------------------------
+      if (aa<alim) goto 120
+      aa = -aa - 0.25d0*alaz
+      iflag = 2
+      sfac = 1.0d0/tol
+      if (aa<(-elim)) goto 210
+      120 continue
+      call f90_zbknu(zta, fnu, kode, 1, cy, nz, tol, elim, alim)
+      130 continue
+      s1 = cy(1)*coef
+      if (iflag/=0) goto 150
+      if (id==1) goto 140
+      ai = csq*s1
+      return
+      140 continue
+      ai=-z*s1
+      return
+      150 continue
+      s1 = s1*sfac
+      if (id==1) goto 160
+      s1=s1*csq
+      ai = s1/sfac
+      return
+      160 continue
+      s1=-s1*z
+      ai = s1/sfac
+      return
+      170 continue
+      aa = 1.0d+3*d1mach1
+      s1 = 0.d0
+      if (id==1) goto 190
+      if (az<=aa) goto 180
+      s1 = c2*z
+      180 continue
+      ai=c1-s1
+      return
+      190 continue
+      ai = -c2
+      aa = sqrt(aa)
+      if (az<=aa) goto 200
+      s1=0.5d0*z*z
+      200 continue
+      ai = ai + c1*s1
+      return
+      210 continue
+      nz = 1
+      ai = 0.d0
+      return
+      270 continue
+      nz = 0
+      ierr = 2
+      return
+      280 continue
+      if (nn==(-1)) goto 270
+      nz = 0
+      ierr = 5
+      return
+      260 continue
+      ierr = 4
+      nz = 0
+      return
+   end subroutine f90_zairy
 end module amos
