@@ -1,5 +1,7 @@
 # amosf90
 
+convert <real(8),real(8)> pair to complex(8), if can, remove goto.
+
 # !!!MAYBE BUGS!!!
 
 # 
