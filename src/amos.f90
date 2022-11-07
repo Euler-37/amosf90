@@ -4,7 +4,8 @@ module amos
    private
    public::f90_zs1s2,f90_zuchk,f90_zrati,f90_zkscl
    public::f90_zasyi,f90_zseri,f90_zunik,f90_zbknu
-   public::f90_zunhj,f90_zuoik,f90_zwrsk
+   public::f90_zunhj,f90_zuoik,f90_zwrsk,f90_zmlri
+   public::f90_zacai
 contains
 
    !// forquill v1.01 beta www.fcode.cn
@@ -28,6 +29,7 @@ contains
       integer,intent(inout)   ::iuf, nz
       real(8)::aln,as1,as2
       complex(8)::s1d
+      write(*,*)"call f90_zs1s2"
       nz = 0
       as1=abs(s1)
       as2=abs(s2)
@@ -1957,7 +1959,7 @@ contains
       !***begin prologue  zwrsk
       !***refer to  zbesi,zbesk
       !
-      !     zwrsk computes the i bessel function for re(z).ge.0.0 by
+      !     zwrsk computes the i bessel function for re(z)>=0.0 by
       !     normalizing the i function ratios from zrati by the wronskian
       !
       !***routines called  d1mach,zbknu,zrati,azabs
@@ -1978,7 +1980,6 @@ contains
       write (*, *) 'call f90_zwrsk'
       nz = 0
       call f90_zbknu(zr, fnu, kode, 2, cw, nw, tol, elim, alim)
-      write(*,*)cw
       if (nw/=0) goto 50
       call f90_zrati(zr, fnu, n, y, tol)
       !-----------------------------------------------------------------------
@@ -2036,4 +2037,265 @@ contains
       return
    end subroutine f90_zwrsk
 
+
+   !// forquill v1.01 beta www.fcode.cn
+   subroutine f90_zmlri(z, fnu, kode, n, y, nz, tol)
+      !***begin prologue  zmlri
+      !***refer to  zbesi,zbesk
+      !
+      !     zmlri computes the i bessel function for re(z)>=0.0 by the
+      !     miller algorithm normalized by a neumann series.
+      !
+      !***routines called  dgamln,d1mach,azabs,azexp,azlog,zmlt
+      !***end prologue  zmlri
+      !     complex ck,cnorm,cone,ctwo,czero,pt,p1,p2,rz,sum,y,z
+      complex(8),intent(in)::z
+      real(8),intent(in)::fnu,tol
+      integer,intent(in)::n,kode
+      integer,intent(inout)::nz
+      complex(8),intent(inout)::y(n)
+      real(8) ack, ak, ap, at, az, bk, fkap, fkk, flam, fnf, &
+         p1r, raz, rho, rho2, scle, tfnf, tst
+      integer i, iaz, ifnu, inu, itime, k, kk, km, m
+      complex(8)::ck,cnorm,pt,p1,p2,rz,sum,st
+      write (*, *) 'call f90_zmlri'
+      scle = d1mach1/tol
+      nz = 0
+      az = abs(z)
+      iaz = int(az)
+      ifnu = int(fnu)
+      inu = ifnu + n - 1
+      at = real(iaz,8) + 1.0d0
+      raz = 1.0d0/az
+      st=conjg(z)*raz
+      ck = st*at*raz
+      rz = (st+st)*raz
+      p1 = 0.0d0
+      p2 = 1.0d0
+      ack = (at+1.0d0)*raz
+      rho = ack + sqrt(ack*ack-1.0d0)
+      rho2 = rho*rho
+      tst = (rho2+rho2)/((rho2-1.0d0)*(rho-1.0d0))
+      tst = tst/tol
+      !-----------------------------------------------------------------------
+      !     compute relative truncation error index for series
+      !-----------------------------------------------------------------------
+      ak = at
+      do i = 1, 80
+         pt=p2
+         p2=p1-ck*pt
+         p1 = pt
+         ck = ck + rz
+         ap = abs(p2)
+         if (ap>tst*ak*ak) goto 20
+         ak = ak + 1.0d0
+      end do
+      goto 110
+      20 continue
+      i = i + 1
+      k = 0
+      if (inu<iaz) goto 40
+      !-----------------------------------------------------------------------
+      !     compute relative truncation error for ratios
+      !-----------------------------------------------------------------------
+      p1 = 0.0d0
+      p2 = 1.0d0
+      at = real(inu,8) + 1.0d0
+      st=conjg(z)*raz
+      ck = st*at*raz
+      ack = at*raz
+      tst = sqrt(ack/tol)
+      itime = 1
+      do k = 1, 80
+         pt = p2
+         p2 = p1 - ck*pt
+         p1 = pt
+         ck = ck + rz
+         ap = abs(p2)
+         if (ap<tst) goto 30
+         if (itime==2) goto 40
+         ack = abs(ck)
+         flam = ack + sqrt(ack*ack-1.0d0)
+         fkap = ap/abs(p1)
+         rho = min(flam, fkap)
+         tst = tst*dsqrt(rho/(rho*rho-1.0d0))
+         itime = 2
+      30 end do
+      goto 110
+      40 continue
+      !-----------------------------------------------------------------------
+      !     backward recurrence and sum normalizing relation
+      !-----------------------------------------------------------------------
+      k = k + 1
+      kk = max(i+iaz, k+inu)
+      fkk = real(kk,8)
+      p1 = 0.0d0
+      !-----------------------------------------------------------------------
+      !     scale p2 and sum by scle
+      !-----------------------------------------------------------------------
+      p2 = scle
+      fnf = fnu - real(ifnu,8)
+      tfnf = fnf + fnf
+      bk=log_gamma(fkk+tfnf+1.0d0)-log_gamma(fkk+1.0d0)-log_gamma(tfnf+1.0d0)
+      bk = exp(bk)
+      sum = 0.0d0
+      km = kk - inu
+      do i = 1, km
+         pt = p2
+         p2 = p1 + (fkk+fnf)*(rz*pt)
+         p1 = pt
+         ak = 1.0d0 - tfnf/(fkk+tfnf)
+         ack = bk*ak
+         sum = sum + (ack+bk)*p1
+         bk = ack
+         fkk = fkk - 1.0d0
+      end do
+      y(n) = p2
+      if (n==1) goto 70
+      do i = 2, n
+         pt = p2
+         p2 = p1 + (fkk+fnf)*(rz*pt)
+         p1 = pt
+         ak = 1.0d0 - tfnf/(fkk+tfnf)
+         ack = bk*ak
+         sum = sum + (ack+bk)*p1
+         bk = ack
+         fkk = fkk - 1.0d0
+         m = n - i + 1
+         y(m) = p2
+      end do
+      70 continue
+      if (ifnu<=0) goto 90
+      do i = 1, ifnu
+         pt = p2
+         p2 = p1 + (fkk+fnf)*(rz*pt)
+         p1 = pt
+         ak = 1.0d0 - tfnf/(fkk+tfnf)
+         ack = bk*ak
+         sum = sum + (ack+bk)*p1
+         bk = ack
+         fkk = fkk - 1.0d0
+      end do
+      90 continue
+      pt = z
+      if (kode==2) pt%re = 0.0d0
+      st=log(rz)
+      p1 = -fnf*st + pt
+      ap=log_gamma(1.0d0+fnf)
+      pt = p1 - ap
+      !-----------------------------------------------------------------------
+      !     the division cexp(pt)/(sum+p2) is altered to avoid overflow
+      !     in the denominator by squaring large quantities
+      !-----------------------------------------------------------------------
+      p2 = p2 + sum
+      ap = abs(p2)
+      p1r = 1.0d0/ap
+      st=exp(pt)
+      ck = st*p1r
+      pt = conjg(p2)*p1r
+      cnorm=ck*pt
+      do i = 1, n
+         y(i)=y(i)*cnorm
+      end do
+      return
+      110 continue
+      nz = -2
+      return
+   end subroutine f90_zmlri
+
+   !// forquill v1.01 beta www.fcode.cn
+   subroutine f90_zacai(z, fnu, kode, mr, n, y, nz, rl, tol, elim, alim)
+      !***begin prologue  zacai
+      !***refer to  zairy
+      !
+      !     zacai applies the analytic continuation formula
+      !
+      !         k(fnu,zn*exp(mp))=k(fnu,zn)*exp(-mp*fnu) - mp*i(fnu,zn)
+      !                 mp=dpi*mr*cmplx(0.0,1.0)
+      !
+      !     to continue the k function from the right half to the left
+      !     half z plane for use with zairy where fnu=1/3 or 2/3 and n=1.
+      !     zacai is the same as zacon with the parts for larger orders and
+      !     recurrence removed. a recursive call to zacon can result if zacon
+      !     is called from zairy.
+      !
+      !***routines called  zasyi,zbknu,zmlri,zseri,zs1s2,d1mach,azabs
+      !***end prologue  zacai
+      !     complex csgn,cspn,c1,c2,y,z,zn,cy
+      complex(8),intent(in)::z
+      real(8),intent(in)::fnu,tol,elim,alim,rl
+      integer,intent(in)::n,kode,mr
+      integer,intent(inout)::nz
+      complex(8),intent(inout)::y(n)
+      real(8)::arg, ascle, az, dfnu, fmr, sgn, yy
+      integer inu, iuf, nn, nw
+      complex(8)::cy(2),zn,csgn,cspn,c1,c2
+      write(*,*)"call f90_zacai, not test"
+      nz = 0
+      zn = -z
+      az = abs(z)
+      nn = n
+      dfnu = fnu + real(n-1,8)
+      if (az<=2.0d0) goto 10
+      if (az*az*0.25d0>dfnu+1.0d0) goto 20
+      10 continue
+      !-----------------------------------------------------------------------
+      !     power series for the i function
+      !-----------------------------------------------------------------------
+      call f90_zseri(zn, fnu, kode, nn, y, nw, tol, elim, alim)
+      goto 40
+      20 continue
+      if (az<rl) goto 30
+      !-----------------------------------------------------------------------
+      !     asymptotic expansion for large z for the i function
+      !-----------------------------------------------------------------------
+      call f90_zasyi(zn, fnu, kode, nn, y, nw, rl, tol, elim, alim)
+      if (nw<0) goto 80
+      goto 40
+      30 continue
+      !-----------------------------------------------------------------------
+      !     miller algorithm normalized by the series for the i function
+      !-----------------------------------------------------------------------
+      call f90_zmlri(zn, fnu, kode, nn, y, nw, tol)
+      if (nw<0) goto 80
+      40 continue
+      !-----------------------------------------------------------------------
+      !     analytic continuation to the left half plane for the k function
+      !-----------------------------------------------------------------------
+      call f90_zbknu(zn, fnu, kode, 1, cy, nw, tol, elim, alim)
+      if (nw/=0) goto 80
+      fmr = real(mr,8)
+      sgn = -sign(dpi, fmr)
+      csgn=cmplx(0.0d0,sgn,8)
+      if (kode==1) goto 50
+      yy = -zn%im
+      csgn%re = -csgn%im*sin(yy)
+      csgn%im =  csgn%im*cos(yy)
+      50 continue
+      !-----------------------------------------------------------------------
+      !     calculate cspn=exp(fnu*dpi*i) to minimize losses of significance
+      !     when fnu is large
+      !-----------------------------------------------------------------------
+      inu = int(fnu)
+      arg = (fnu-real(inu,8))*sgn
+      cspn%re = cos(arg)
+      cspn%im = sin(arg)
+      if (mod(inu,2)==0) goto 60
+      cspn = -cspn
+      60 continue
+      c1 = cy(1)
+      c2 = y(1)
+      if (kode==1) goto 70
+      iuf = 0
+      ascle = 1.0d+3*d1mach1/tol
+      call f90_zs1s2(zn, c1, c2, nw, ascle, alim, iuf)
+      nz = nz + nw
+      70 continue
+      y(1)=cspn*c1+csgn*c2
+      return
+      80 continue
+      nz = -1
+      if (nw==(-2)) nz = -2
+      return
+   end subroutine f90_zacai
 end module amos
