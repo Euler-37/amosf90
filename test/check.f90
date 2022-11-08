@@ -4,13 +4,14 @@ program check
    integer,parameter::n=10
    integer,parameter::step=200
    integer::i,ierr,nz,j
-   complex(8)::z,rc(n),cwork(n)
+   complex(8)::z,zz,rc(n),cwork(n)
+   real(8)::tmp
    call random_seed(put=[(i,i=1,33)])
-   tmpx=1.d+1
-   tmpy=1.d+1
+   tmp=1.d+1
    do i=1,step
        call random_number(z%re)
        call random_number(z%im)
+       z=z*tmp
        call f90_zbiry(z, 0, 2, zz, ierr)
        call f90_zbesi(z, 1.4d0, 2, n, rc, nz, ierr)
        call f90_zbesj(z, 0.1d0, 1, n, rc, nz, ierr)
