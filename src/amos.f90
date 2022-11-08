@@ -33,7 +33,7 @@ contains
       integer,intent(inout)   ::iuf, nz
       real(8)::aln,as1,as2
       complex(8)::s1d
-      write(*,*)"call f90_zs1s2"
+      !DEBUG write(*,*)"call f90_zs1s2"
       nz = 0
       as1=abs(s1)
       as2=abs(s2)
@@ -109,7 +109,7 @@ contains
          rak, rap1, rho, test, test1,ptr
       integer i, id, idnu, inu, itime, k, kk, magz
       complex(8)::t1,p1,p2,pt,rz,cdfnu
-      write(*,*)"call f90_zrati"
+      !DEBUG write(*,*)"call f90_zrati"
       az=abs(z)
       inu = int(fnu)
       idnu = inu + n - 1
@@ -315,7 +315,7 @@ contains
          raz, rs, rtr1, s, ss
       integer::i, ib, iflag, il, k, l, m, nn, nw
       complex(8)::w(2),ak1,ck,coef,cz,hz,rz,s1,s2
-      write(*,*)"call f90_zseri"
+      !DEBUG write(*,*)"call f90_zseri"
       nz = 0
       az = abs(z)
       if (iszero(az)) goto 160
@@ -481,7 +481,7 @@ contains
       complex(8) ak1,ck,cs1,cs2,cz,dk,ez,p1,rz,s2
       real(8)::az,arm,rtr1,dfnu,raz,dnu2,fdn,aez,s,arg,ak,bk
       real(8)::aa,atol,bb,sgn,sqk
-      write(*,*)'call f90_zasyi'
+      !DEBUG write(*,*)'call f90_zasyi'
       nz = 0
       az = abs(z)
       arm = 1.0d+3*d1mach1
@@ -685,7 +685,7 @@ contains
          -2.18229277575292237D+10,     1.24700929351271032D+09,&
          -2.91883881222208134D+07,     1.18838426256783253D+05 &
          ]
-      write(*,*)"call f90_zunik"
+      !DEBUG write(*,*)"call f90_zunik"
       if (init/=0) goto 40
       !-----------------------------------------------------------------------
       !     initialize all variables
@@ -792,7 +792,7 @@ contains
          -2.15241674114950973D-04,    -2.01348547807882387D-05,&
           1.13302723198169588D-06,     6.11609510448141582D-09&
          ]
-      write (*, *) 'call f90_zbknu'
+      !DEBUG write (*, *) 'call f90_zbknu'
       caz=abs(z)
       csclr = 1.0d0/tol
       crscr = tol
@@ -1565,7 +1565,7 @@ contains
 
       real(8),parameter::ex1 =3.33333333333333333D-01
       real(8),parameter::ex2 =6.66666666666666667D-01
-      write (*, *) 'call f90_zunhj'
+      !DEBUG write (*, *) 'call f90_zunhj'
       rfnu=1.0d0/fnu
       !-----------------------------------------------------------------------
       !     overflow test (z/fnu too small)
@@ -1821,7 +1821,7 @@ contains
       integer   ::i, iform, ikflg, init, nn, nw
       complex(8)::arg,asum,bsum,cwrk(16),cz,sum,zb,zeta1,zeta2,zr,phi,zn,st
       real(8),parameter::aic=1.265512123484645396d+00
-      write (*, *) 'call f90_zuoik'
+      !DEBUG write (*, *) 'call f90_zuoik'
       nuf = 0
       nn = n
       zr = z
@@ -1981,7 +1981,7 @@ contains
       !     y(i)=i(fnu+i,z)/i(fnu+i-1,z) from crati normalized by the
       !     wronskian with k(fnu,z) and k(fnu+1,z) from cbknu.
       !-----------------------------------------------------------------------
-      write (*, *) 'call f90_zwrsk'
+      !DEBUG write (*, *) 'call f90_zwrsk'
       nz = 0
       call f90_zbknu(zr, fnu, kode, 2, cw, nw, tol, elim, alim)
       if (nw/=0) goto 50
@@ -2062,7 +2062,7 @@ contains
          p1r, raz, rho, rho2, scle, tfnf, tst
       integer i, iaz, ifnu, inu, itime, k, kk, km, m
       complex(8)::ck,cnorm,pt,p1,p2,rz,sum,st
-      write (*, *) 'call f90_zmlri'
+      !DEBUG write (*, *) 'call f90_zmlri'
       scle = d1mach1/tol
       nz = 0
       az = abs(z)
@@ -2232,7 +2232,7 @@ contains
       real(8)::arg, ascle, az, dfnu, fmr, sgn, yy
       integer inu, iuf, nn, nw
       complex(8)::cy(2),zn,csgn,cspn,c1,c2
-      write(*,*)"call f90_zacai, not test"
+      !DEBUG write(*,*)"call f90_zacai, not test"
       nz = 0
       zn = -z
       az = abs(z)
@@ -2444,7 +2444,7 @@ contains
       real(8),parameter::c2 =2.58819403792806799d-01
       real(8),parameter::coef=1.83776298473930683d-01
       !***first executable statement  zairy
-      write(*,*)"call f90_zairy,not test"
+      !DEBUG write(*,*)"call f90_zairy,not test"
       ierr = 0
       nz = 0
       if (id<0 .or. id>1) ierr = 1
@@ -2669,7 +2669,7 @@ contains
       complex(8)::cwrk(16),cy(2),s1,s2,c2,phi,rz,st,sum,zeta1,zeta2
       real(8)::bry(3),cssr(3),csrr(3)
       !
-      write (*, *) 'call f90_zuni1, not test'
+      !DEBUG write (*, *) 'call f90_zuni1, not test'
       nz = 0
       nd = n
       nlast = 0
@@ -2845,7 +2845,7 @@ contains
       real(8)::csrr(3),cssr(3),bry(3)
       complex(8)::cy(2),ca,c2,zn,s1,s2,zb,asum,bsum,zeta1,zeta2,st,rz,ai,arg,phi,dai
       !
-      write (*, *) 'call f90_zuni2,not test'
+      !DEBUG write (*, *) 'call f90_zuni2,not test'
       nz = 0
       nd = n
       nlast = 0
@@ -3053,7 +3053,7 @@ contains
       integer::i, iflag, iform, k,  nl,nw
       complex(8)::cy(2),st,rz,s1,s2
       real(8)::bry(3)
-      write(*,*)"call f90_zbuni, not test"
+      !DEBUG write(*,*)"call f90_zbuni, not test"
       nz = 0
       ax = abs(z%re)*1.7321d0
       ay = abs(z%im)
@@ -3197,7 +3197,7 @@ contains
       real(8)::az,dfnu
       integer::i,inw,nlast,nn,nui,nw
       complex(8)::cw(2)
-      write (*, *) 'call f90_zbinu'
+      !DEBUG write (*, *) 'call f90_zbinu'
       !
       nz = 0
       az = abs(z)
@@ -3316,7 +3316,7 @@ contains
       integer i, inu, iuf, kflag, nn, nw
       real(8)::bry(3),cssr(3),csrr(3),cscl,cscr
       complex(8)::ck,csgn,cspn,c1,c2,rz,sc1,sc2,st,s1,s2,zn,cp,cy(2)
-      write (*, *) 'call f90_zacon,not test'
+      !DEBUG write (*, *) 'call f90_zacon,not test'
       nz = 0
       zn = -z
       nn = n
@@ -3582,7 +3582,7 @@ contains
       real(8),parameter::c2  =4.48288357353826359d-01 
       real(8),parameter::coef=5.77350269189625765d-01
       !***first executable statement  zbiry
-      write (*, *) 'call f90_zbiry.not test'
+      !DEBUG write (*, *) 'call f90_zbiry.not test'
       ierr = 0
       nz = 0
       if (id<0 .or. id>1) ierr = 1
@@ -3797,7 +3797,7 @@ contains
       complex(8)::ck,cspn,csr,c1,c2,phid,rz,sumd,s1,s2,zr
       complex(8)::st,zet1d,zet2d
       !
-      write (*, *) 'call f90_zunk1,not test'
+      !DEBUG write (*, *) 'call f90_zunk1,not test'
       kdflg = 1
       nz = 0
       !-----------------------------------------------------------------------
@@ -4522,7 +4522,7 @@ contains
       integer,intent(inout)::nz
       complex(8),intent(inout)::y(n)
       real(8)::ax,ay
-      write (*, *) 'call f90_zbunk, not test'
+      !DEBUG write (*, *) 'call f90_zbunk, not test'
       nz = 0
       ax = abs(z%re)*1.7321d0
       ay = abs(z%im)
@@ -4709,7 +4709,7 @@ contains
       complex(8)::zn,csgn
       !
       !***first executable statement  zbesi
-      write(*,*)"call f90_zbesi,not test"
+      !DEBUG write(*,*)"call f90_zbesi,not test"
       ierr = 0
       nz = 0
       if (fnu<0.0d0) ierr = 1
@@ -4959,7 +4959,7 @@ contains
          bb, fn, az, ascle, rtol, atol
       integer::i, ierr, inu, inuh, ir, k, nl
       complex(8)::zn,csgn
-      write(*,*)"call f90_zbesj,not test"
+      !DEBUG write(*,*)"call f90_zbesj,not test"
       !
       !***first executable statement  zbesj
       ierr = 0
@@ -5219,7 +5219,7 @@ contains
       real(8)::aa, alim, aln, arg, az, dig, elim, fn, fnul, rl, tol, ufl, bb
       integer::ierr, k, mr, nn, nuf, nw
       !***first executable statement  zbesk
-      write(*,*)"call zbesk,not test"
+      !DEBUG write(*,*)"call f90_zbesk,not test"
       ierr = 0
       nz = 0
       if (iszero(z)) ierr = 1
@@ -5509,7 +5509,7 @@ contains
       !
       !
       !***first executable statement  zbesh
-      write(*,*)"call zbesh,not test"
+      !DEBUG write(*,*)"call f90_zbesh,not test"
       ierr = 0
       nz = 0
       if (iszero(z)) ierr = 1
@@ -5827,8 +5827,8 @@ contains
       integer,intent(in)::n,kode
       integer,intent(inout)::nz
       complex(8),intent(inout)::cy(n),cwrk(n)
-      real(8) ::elim, ey, hcii, tay, dexp, d1mach,&
-         ascle, rtol, atol, aa, bb, tol, r1m5
+      real(8) ::elim, ey, hcii, tay,&
+         ascle, rtol, atol, aa, bb, tol
       integer i, ierr, k, nz1, nz2
       complex(8)::st,ex,c1,c2
       !***first executable statement  zbesy
@@ -5854,7 +5854,6 @@ contains
       60 continue
       tol = max(d1mach4, 1.0d-18)
       k = min(abs(i1mach15), abs(i1mach16))
-      r1m5 = d1mach(5)
       !-----------------------------------------------------------------------
       !     elim is the approximate exponential under- and overflow limit
       !-----------------------------------------------------------------------
